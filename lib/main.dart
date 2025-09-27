@@ -4,6 +4,7 @@ import 'dart:typed_data';
 import 'package:flutter/foundation.dart'
     show TargetPlatform, defaultTargetPlatform, kIsWeb;
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
 
 void main() => runApp(const BreedDemoApp());
@@ -53,7 +54,7 @@ final List<BreedInfo> _breedLibrary = [
     species: 'Cattle',
     origin: 'Gujarat, India',
     primaryUse: 'Dairy',
-    traits: const [
+    traits: [
       'Heat tolerant',
       'High butterfat milk',
       'Distinctive curved horns',
@@ -66,11 +67,7 @@ final List<BreedInfo> _breedLibrary = [
     species: 'Cattle',
     origin: 'Punjab, India & Pakistan',
     primaryUse: 'Dairy',
-    traits: const [
-      'Calm temperament',
-      'Disease resilient',
-      'Adaptable to heat',
-    ],
+    traits: ['Calm temperament', 'Disease resilient', 'Adaptable to heat'],
     description:
         'Sahiwal is one of the best dairy breeds of zebu cattle, known for rich milk production and docility.',
   ),
@@ -79,7 +76,7 @@ final List<BreedInfo> _breedLibrary = [
     species: 'Cattle',
     origin: 'Gujarat & Rajasthan, India',
     primaryUse: 'Dual purpose',
-    traits: const ['Strong draft power', 'Long lifespan', 'Hardy hooves'],
+    traits: ['Strong draft power', 'Long lifespan', 'Hardy hooves'],
     description:
         'Kankrej cattle combine good milking ability with strength, making them valuable for both dairy and farm work.',
   ),
@@ -88,7 +85,7 @@ final List<BreedInfo> _breedLibrary = [
     species: 'Cattle',
     origin: 'Rajasthan, India',
     primaryUse: 'Dual purpose',
-    traits: const ['Heat tolerance', 'Efficient grazer', 'Drought resilient'],
+    traits: ['Heat tolerance', 'Efficient grazer', 'Drought resilient'],
     description:
         'Tharparkar cattle are suited for arid regions, offering reliable milk and moderate draft capabilities.',
   ),
@@ -97,7 +94,7 @@ final List<BreedInfo> _breedLibrary = [
     species: 'Cattle',
     origin: 'Sindh, Pakistan',
     primaryUse: 'Dairy',
-    traits: const ['Red coat', 'High fertility', 'Long lactation'],
+    traits: ['Red coat', 'High fertility', 'Long lactation'],
     description:
         'Red Sindhi cattle are valued for their red coat and consistent milk yield even under tropical climates.',
   ),
@@ -106,11 +103,7 @@ final List<BreedInfo> _breedLibrary = [
     species: 'Buffalo',
     origin: 'Haryana & Punjab, India',
     primaryUse: 'Dairy',
-    traits: const [
-      'High butterfat milk',
-      'Jet-black skin',
-      'Tightly curled horns',
-    ],
+    traits: ['High butterfat milk', 'Jet-black skin', 'Tightly curled horns'],
     description:
         'Murrah buffalo are the global standard for dairy buffalo, producing high-fat milk and adapting well to hot conditions.',
   ),
@@ -119,7 +112,7 @@ final List<BreedInfo> _breedLibrary = [
     species: 'Buffalo',
     origin: 'Gujarat, India',
     primaryUse: 'Dairy',
-    traits: const ['Moderate size', 'White tail switch', 'High milk fat'],
+    traits: ['Moderate size', 'White tail switch', 'High milk fat'],
     description:
         'Surti buffalo are efficient dairy producers with gentle temperaments and easily recognizable white markings.',
   ),
@@ -128,7 +121,7 @@ final List<BreedInfo> _breedLibrary = [
     species: 'Buffalo',
     origin: 'Saurashtra, India',
     primaryUse: 'Dairy',
-    traits: const ['Massive frame', 'Heavy milk yield', 'Drooping horns'],
+    traits: ['Massive frame', 'Heavy milk yield', 'Drooping horns'],
     description:
         'Jaffarabadi buffalo are among the heaviest buffalo breeds and are reputed for rich milk and strong build.',
   ),
@@ -137,7 +130,7 @@ final List<BreedInfo> _breedLibrary = [
     species: 'Buffalo',
     origin: 'Kutch, India',
     primaryUse: 'Dairy',
-    traits: const ['Night grazing', 'Disease resilient', 'High butterfat'],
+    traits: ['Night grazing', 'Disease resilient', 'High butterfat'],
     description:
         'Banni buffalo thrive in desert conditions and are known for high-fat milk from traditional night grazing practices.',
   ),
@@ -146,14 +139,18 @@ final List<BreedInfo> _breedLibrary = [
     species: 'Buffalo',
     origin: 'Maharashtra, India',
     primaryUse: 'Dairy',
-    traits: const [
-      'Long twisted horns',
-      'Long lactation',
-      'Adapted to semi-arid',
-    ],
+    traits: ['Long twisted horns', 'Long lactation', 'Adapted to semi-arid'],
     description:
         'Pandharpuri buffalo are easily identified by their long, twisted horns and steady milk production.',
   ),
+];
+
+const List<String> _sampleImageUrls = [
+  'https://tiimg.tistatic.com/fp/1/007/524/pure-black-indian-female-murrah-buffalo-300-550-kg-619.jpg',
+  'https://www.shutterstock.com/shutterstock/photos/2326786553/display_1500/stock-photo-gir-cow-desi-cow-asian-cow-dairy-2326786553.jpg',
+  'https://www.bing.com/th/id/OIP.jYLM3zLw7tGM6IEYyTcQ3gHaF1?w=234&h=211&c=8&rs=1&qlt=90&o=6&dpr=1.3&pid=3.1&rm=2',
+  'https://5.imimg.com/data5/SELLER/Default/2024/1/381588134/CK/YX/GU/211034892/indian-murrah-buffalo-500x500.png',
+  'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRCPenovAWuVB_cnFEPYSPV91EV61mXAAeGmQ&s=1000w',
 ];
 
 class DemoScreen extends StatefulWidget {
@@ -168,6 +165,7 @@ class DemoScreen extends StatefulWidget {
 class _DemoScreenState extends State<DemoScreen> {
   XFile? _image;
   Uint8List? _imageBytes;
+  String? _networkImageUrl;
   final ImagePicker _picker = ImagePicker();
   List<BreedPrediction>? _predictions;
   String? _feedback;
@@ -200,6 +198,8 @@ class _DemoScreenState extends State<DemoScreen> {
                       _buildImagePreviewSection(),
                       const SizedBox(height: 20),
                       _buildActionButtons(),
+                      const SizedBox(height: 20),
+                      _buildSuggestedImagePicker(),
                       const SizedBox(height: 24),
                       if (_isLoading)
                         const Center(child: CircularProgressIndicator()),
@@ -211,11 +211,9 @@ class _DemoScreenState extends State<DemoScreen> {
                           ),
                         ),
                         const SizedBox(height: 12),
-                        ..._predictions!
-                            .map(
-                              (prediction) => _buildPredictionCard(prediction),
-                            )
-                            .toList(),
+                        ..._predictions!.map(
+                          (prediction) => _buildPredictionCard(prediction),
+                        ),
                       ] else if (!_isLoading && _image != null)
                         Padding(
                           padding: const EdgeInsets.symmetric(vertical: 12.0),
@@ -251,7 +249,7 @@ class _DemoScreenState extends State<DemoScreen> {
     );
   }
 
-  Future<void> pickImage(ImageSource source) async {
+  Future<void> pickImage(ImageSource source, {String? imageUrl}) async {
     if (!kIsWeb &&
         defaultTargetPlatform == TargetPlatform.windows &&
         source == ImageSource.camera) {
@@ -266,34 +264,77 @@ class _DemoScreenState extends State<DemoScreen> {
     }
 
     try {
-      final pickedFile = await _picker.pickImage(source: source);
-      if (pickedFile == null) {
-        return;
+      XFile? selectedFile;
+      Uint8List? bytes;
+      final bool isNetworkSource = imageUrl != null && imageUrl.isNotEmpty;
+
+      if (isNetworkSource) {
+        selectedFile = XFile(imageUrl!);
+
+        if (kIsWeb) {
+          bytes = null;
+        } else {
+          try {
+            final Uri networkUrl = Uri.parse(imageUrl!);
+            final http.Response response = await http.get(networkUrl);
+            if (response.statusCode != 200 || response.bodyBytes.isEmpty) {
+              throw const FormatException('Sample image returned no data.');
+            }
+            bytes = Uint8List.fromList(response.bodyBytes);
+          } on FormatException catch (formatError) {
+            if (mounted) {
+              ScaffoldMessenger.of(
+                context,
+              ).showSnackBar(SnackBar(content: Text(formatError.message)));
+            }
+            return;
+          } on UnsupportedError {
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text(
+                    'This platform cannot load network sample images. Please upload from your device instead.',
+                  ),
+                ),
+              );
+            }
+            return;
+          }
+        }
+      } else {
+        selectedFile = await _picker.pickImage(source: source);
+        if (selectedFile == null) {
+          return;
+        }
+        bytes = await selectedFile.readAsBytes();
+        if (bytes.isEmpty) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text(
+                  'Selected image is unavailable or unsupported on this platform.',
+                ),
+              ),
+            );
+          }
+          return;
+        }
       }
 
-      final bytes = await pickedFile.readAsBytes();
-      if (bytes.isEmpty) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text(
-              'Selected image is unavailable or unsupported on this platform.',
-            ),
-          ),
-        );
+      if (selectedFile == null) {
         return;
       }
-
-      final filePath = pickedFile.path;
 
       setState(() {
-        _image = pickedFile;
-        _imageBytes = bytes;
+        _image = selectedFile;
+        _imageBytes = (isNetworkSource && kIsWeb) ? null : bytes;
+        _networkImageUrl = (isNetworkSource && kIsWeb) ? imageUrl : null;
         _predictions = null;
         _feedback = null;
         _isLoading = true;
       });
 
-      final results = await _simulatePrediction(pickedFile);
+      final results = await _simulatePrediction(selectedFile);
       if (!mounted) return;
 
       setState(() {
@@ -302,6 +343,12 @@ class _DemoScreenState extends State<DemoScreen> {
       });
     } catch (error) {
       if (!mounted) return;
+      setState(() {
+        _image = null;
+        _imageBytes = null;
+        _networkImageUrl = null;
+        _isLoading = false;
+      });
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text('Unable to access image: $error')));
@@ -567,12 +614,127 @@ class _DemoScreenState extends State<DemoScreen> {
     );
   }
 
+  Widget _buildSuggestedImagePicker() {
+    final theme = Theme.of(context);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Or select from below',
+          style: theme.textTheme.titleMedium?.copyWith(
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          'Tap a ready-made sample image to see predictions instantly.',
+          style: theme.textTheme.bodySmall?.copyWith(
+            color: theme.colorScheme.onSurface.withOpacity(0.7),
+          ),
+        ),
+        const SizedBox(height: 12),
+        SizedBox(
+          height: 176,
+          child: ListView.separated(
+            scrollDirection: Axis.horizontal,
+            physics: const BouncingScrollPhysics(),
+            itemBuilder: (context, index) {
+              final imageUrl = _sampleImageUrls[index];
+
+              return SizedBox(
+                width: 156,
+                child: Material(
+                  color: Colors.transparent,
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(18),
+                    onTap: () =>
+                        pickImage(ImageSource.gallery, imageUrl: imageUrl),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(18),
+                          child: AspectRatio(
+                            aspectRatio: 4 / 3,
+                            child: Image.network(
+                              imageUrl,
+                              fit: BoxFit.cover,
+                              loadingBuilder:
+                                  (context, child, loadingProgress) {
+                                    if (loadingProgress == null) {
+                                      return child;
+                                    }
+                                    return Center(
+                                      child: CircularProgressIndicator(
+                                        value:
+                                            loadingProgress
+                                                    .expectedTotalBytes !=
+                                                null
+                                            ? loadingProgress
+                                                      .cumulativeBytesLoaded /
+                                                  loadingProgress
+                                                      .expectedTotalBytes!
+                                            : null,
+                                      ),
+                                    );
+                                  },
+                              errorBuilder: (context, error, stackTrace) =>
+                                  Container(
+                                    color: theme
+                                        .colorScheme
+                                        .surfaceContainerHighest,
+                                    alignment: Alignment.center,
+                                    child: const Icon(
+                                      Icons.broken_image_outlined,
+                                    ),
+                                  ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 10),
+                        Text(
+                          'Sample ${index + 1}',
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          'Tap to try',
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: theme.colorScheme.onSurface.withOpacity(0.6),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              );
+            },
+            separatorBuilder: (context, _) => const SizedBox(width: 18),
+            itemCount: _sampleImageUrls.length,
+          ),
+        ),
+      ],
+    );
+  }
+
   Widget _buildImagePreviewSection() {
     final theme = Theme.of(context);
     final borderRadius = BorderRadius.circular(20);
-    final previewKey = ValueKey<String>(_image?.path ?? 'placeholder');
+    final previewKey = ValueKey<String>(
+      _imageBytes != null
+          ? 'bytes-${_imageBytes.hashCode}'
+          : (_networkImageUrl != null
+                ? 'network-${_networkImageUrl!}'
+                : 'placeholder'),
+    );
 
     Widget previewChild;
+    final bool hasNetworkImage =
+        _networkImageUrl != null && _networkImageUrl!.isNotEmpty;
+
     if (_image == null) {
       previewChild = AnimatedContainer(
         key: previewKey,
@@ -611,7 +773,7 @@ class _DemoScreenState extends State<DemoScreen> {
               ),
               const SizedBox(height: 12),
               Text(
-                'Choose “Upload Image” or “Take Photo” to see a preview here.',
+                'Choose “Upload Image” or “Take Photo” to see a preview here, or pick a sample below.',
                 textAlign: TextAlign.center,
                 style: theme.textTheme.bodyMedium?.copyWith(
                   color: theme.colorScheme.onSurface.withOpacity(0.72),
@@ -674,12 +836,61 @@ class _DemoScreenState extends State<DemoScreen> {
                     );
                   },
                 )
+              : hasNetworkImage
+              ? LayoutBuilder(
+                  builder: (context, constraints) {
+                    final double maxHeight =
+                        constraints.maxWidth / (kIsWeb ? 1.4 : 1.2);
+                    return ConstrainedBox(
+                      constraints: BoxConstraints(
+                        maxHeight: maxHeight.clamp(200, 340),
+                        minHeight: 200,
+                      ),
+                      child: ClipRRect(
+                        borderRadius: borderRadius,
+                        child: FittedBox(
+                          fit: BoxFit.contain,
+                          alignment: Alignment.center,
+                          clipBehavior: Clip.hardEdge,
+                          child: Image.network(
+                            _networkImageUrl!,
+                            filterQuality: FilterQuality.high,
+                            gaplessPlayback: true,
+                            errorBuilder: (context, error, stackTrace) =>
+                                Container(
+                                  color:
+                                      theme.colorScheme.surfaceContainerHighest,
+                                  alignment: Alignment.center,
+                                  child: Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Icon(
+                                        Icons.image_not_supported_outlined,
+                                        size: 42,
+                                        color: theme.colorScheme.onSurface
+                                            .withOpacity(0.55),
+                                      ),
+                                      const SizedBox(height: 8),
+                                      Text(
+                                        'Preview unavailable for this image.',
+                                        style: theme.textTheme.bodyMedium,
+                                        textAlign: TextAlign.center,
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                          ),
+                        ),
+                      ),
+                    );
+                  },
+                )
               : Container(
                   height: 240,
                   width: double.infinity,
                   alignment: Alignment.center,
                   decoration: BoxDecoration(
-                    color: theme.colorScheme.surfaceVariant,
+                    color: theme.colorScheme.surfaceContainerHighest,
                     borderRadius: borderRadius,
                   ),
                   child: Column(
